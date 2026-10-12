@@ -4,6 +4,59 @@ void main() {
   runApp(const CosmicExplorerApp());
 }
 
+class Planet {
+  final String name;
+  final String type;
+  final String description;
+
+  const Planet({
+    required this.name,
+    required this.type,
+    required this.description,
+  });
+}
+
+class PlanetCatalog {
+  static const List<Planet> planets = [
+    Planet(
+      name: 'Mercury',
+      type: 'Terrestrial',
+      description:
+          'Mercury is the smallest planet in the Solar System. '
+          'It has a rocky surface and extreme temperature changes.',
+    ),
+    Planet(
+      name: 'Mars',
+      type: 'Terrestrial',
+      description:
+          'Mars is known as the Red Planet. Scientists study its '
+          'surface for evidence of ancient water and possible life.',
+    ),
+    Planet(
+      name: 'Jupiter',
+      type: 'Gas Giant',
+      description:
+          'Jupiter is the largest planet in the Solar System. '
+          'It has powerful storms and many natural satellites.',
+    ),
+    Planet(
+      name: 'Kepler-186f',
+      type: 'Terrestrial',
+      description:
+          'Kepler-186f is an exoplanet orbiting a star outside '
+          'our Solar System. It is known for its potential to '
+          'have conditions suitable for liquid water.',
+    ),
+    Planet(
+      name: 'Proxima Centauri b',
+      type: 'Exoplanet',
+      description:
+          'Proxima Centauri b orbits Proxima Centauri, the '
+          'nearest known stellar neighbor to our Solar System.',
+    ),
+  ];
+}
+
 class CosmicExplorerApp extends StatelessWidget {
   const CosmicExplorerApp({super.key});
 
@@ -25,38 +78,62 @@ class MissionControl extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Cosmic Explorer - Mission Control'),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const DockingBay(),
-              ),
-            );
-          },
-          child: const Text('Enter Docking Bay'),
-        ),
+      body: ListView.builder(
+        itemCount: PlanetCatalog.planets.length,
+        itemBuilder: (context, index) {
+          final planet = PlanetCatalog.planets[index];
+
+          return ListTile(
+            leading: const Icon(Icons.public),
+            title: Text(planet.name),
+            subtitle: Text(planet.type),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PlanetDetail(planet: planet),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
 }
 
-class DockingBay extends StatelessWidget {
-  const DockingBay({super.key});
+class PlanetDetail extends StatelessWidget {
+  final Planet planet;
+
+  const PlanetDetail({
+    super.key,
+    required this.planet,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Docking Bay Telemetry'),
+        title: Text(planet.name),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: const Text('Return to Control'),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Planet Type: ${planet.type}',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              planet.description,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
         ),
       ),
     );
