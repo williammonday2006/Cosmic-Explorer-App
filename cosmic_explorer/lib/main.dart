@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   runApp(const CosmicExplorerApp());
@@ -51,14 +52,44 @@ class PlanetCatalog {
   ];
 }
 
+final GoRouter myRouter = GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const MissionControl(),
+    ),
+    GoRoute(
+      path: '/docking-bay',
+      builder: (context, state) => const DockingBay(),
+    ),
+    GoRoute(
+      path: '/planet/:id',
+      builder: (context, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '');
+
+        if (id == null ||
+            id < 0 ||
+            id >= PlanetCatalog.planets.length) {
+          return const InvalidPlanet();
+        }
+
+        return PlanetDetail(
+          planet: PlanetCatalog.planets[id],
+        );
+      },
+    ),
+  ],
+);
+
 class CosmicExplorerApp extends StatelessWidget {
   const CosmicExplorerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      home: MissionControl(),
+      routerConfig: myRouter,
     );
   }
 }
@@ -72,6 +103,42 @@ class MissionControl extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Cosmic Explorer - Mission Control'),
       ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Text(
+                  'IEA Command Systems',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                  ),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Mission Control'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.rocket_launch),
+              title: const Text('Docking Bay'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/docking-bay');
+              },
+            ),
+          ],
+        ),
+      ),
       body: ListView.builder(
         itemCount: PlanetCatalog.planets.length,
         itemBuilder: (context, index) {
@@ -81,12 +148,10 @@ class MissionControl extends StatelessWidget {
             leading: const Icon(Icons.public),
             title: Text(planet.name),
             subtitle: Text(planet.type),
+            trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () async {
-              final result = await Navigator.push<String>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PlanetDetail(planet: planet),
-                ),
+              final result = await context.push<String>(
+                '/planet/$index',
               );
 
               if (!context.mounted) return;
@@ -104,6 +169,27 @@ class MissionControl extends StatelessWidget {
   }
 }
 
+class DockingBay extends StatelessWidget {
+  const DockingBay({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Docking Bay Telemetry'),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            context.go('/');
+          },
+          child: const Text('Return to Control'),
+        ),
+      ),
+    );
+  }
+}
+
 class PlanetDetail extends StatelessWidget {
   final Planet planet;
 
@@ -115,7 +201,9 @@ class PlanetDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(planet.name)),
+      appBar: AppBar(
+        title: Text(planet.name),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -136,14 +224,45 @@ class PlanetDetail extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(
-                  context,
-                  'You visited ${planet.name}!',
-                );
+                context.pop('You visited ${planet.name}!');
               },
               child: const Text('Confirm Visit'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class InvalidPlanet extends StatelessWidget {
+  const InvalidPlanet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Unknown Planet'),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'The requested planet could not be found.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  context.go('/');
+                },
+                child: const Text('Return to Mission Control'),
+              ),
+            ],
+          ),
         ),
       ),
     );
